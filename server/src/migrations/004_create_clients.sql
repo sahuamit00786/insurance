@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS clients (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  name              VARCHAR(150)  NOT NULL,
+  identification_no VARCHAR(50)   NOT NULL UNIQUE,
+  date_of_birth     DATE          NULL,
+  address           TEXT          NULL,
+  phone             VARCHAR(20)   NULL,
+  email             VARCHAR(150)  NULL,
+  issued_date       DATE          NULL,
+  maturity_date     DATE          NULL,
+  plan_code_id      INT           NULL,
+  payment_mode_id   INT           NULL,
+  payment_method_id INT           NULL,
+  premium_due_date  DATE          NULL,
+  status_id         INT           NULL,
+  policy_no         VARCHAR(100)  NULL,
+  total_premium     DECIMAL(12,2) NULL,
+  created_by        INT           NULL,
+  created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);

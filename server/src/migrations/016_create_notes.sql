@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS notes (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  client_id  INT          NOT NULL,
+  title      VARCHAR(200) NULL,
+  body       TEXT         NOT NULL,
+  color      VARCHAR(20)  NOT NULL DEFAULT 'blue',
+  pinned     TINYINT(1)   NOT NULL DEFAULT 0,
+  created_by INT          NULL,
+  deleted_at TIMESTAMP    NULL DEFAULT NULL,
+  is_deleted TINYINT(1)   NOT NULL DEFAULT 0,
+  created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (client_id)  REFERENCES clients(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id)   ON DELETE SET NULL
+);

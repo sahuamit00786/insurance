@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\sahua\\\\Downloads\\\\Insurance\" -Recurse)",
+      "Bash(Select-Object -Property FullName)",
+      "Bash(Sort-Object FullName)"
+    ]
+  }
+}

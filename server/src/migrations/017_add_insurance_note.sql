@@ -1,0 +1,1 @@
+ALTER TABLE insurances ADD COLUMN note TEXT NULL;
