@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, CheckCircle, X, Trash2 } from 'lucide-react';
+import { CalendarClock, CheckCircle, X, Trash2, EyeOff, Eye } from 'lucide-react';
 import DataTable from '../ui/DataTable';
 import { CardHeader } from '../ui/Card';
 import { getMaturity } from '../../api/dashboard';
@@ -20,6 +20,7 @@ function humanTime(days) {
 export default function MaturityTable() {
   const [page, setPage] = useState(1);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const { dismissed, dismiss, dismissAll } = useDismissed('insur_dismissed_maturity');
 
@@ -85,27 +86,43 @@ export default function MaturityTable() {
     },
   ];
 
-  const clearAllAction = visibleIds.length > 0 ? (
+  const toggleBtn = (
     <button
       type="button"
-      onClick={() => setConfirmClear(true)}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition"
+      onClick={() => setOpen(p => !p)}
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition"
     >
-      <Trash2 size={12}/>
-      Clear All
+      {open ? <EyeOff size={12}/> : <Eye size={12}/>}
+      {open ? 'Hide' : 'Show'}
     </button>
-  ) : null;
+  );
+
+  const clearAllAction = (
+    <div className="flex items-center gap-2">
+      {toggleBtn}
+      {visibleIds.length > 0 && open && (
+        <button
+          type="button"
+          onClick={() => setConfirmClear(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition"
+        >
+          <Trash2 size={12}/>
+          Clear All
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <>
       <div className="card-surface overflow-hidden">
         <CardHeader
           title="Maturity Tracker"
-          subtitle="Policies maturing within next 30 days"
+          subtitle="Policies maturing within 1 month"
           icon={CalendarClock}
           action={clearAllAction}
         />
-        <DataTable
+        {open && <DataTable
           columns={columns}
           rows={rows}
           loading={isLoading}
@@ -119,7 +136,7 @@ export default function MaturityTable() {
           onPageSizeChange={() => {}}
           emptyMessage="No policies maturing in the next 30 days"
           emptyIcon={<CheckCircle size={22} className="text-emerald-400" />}
-        />
+        />}
       </div>
 
       <ConfirmDialog

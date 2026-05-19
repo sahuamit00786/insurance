@@ -108,15 +108,14 @@ export default function LoginPage() {
 
       {/* Form panel */}
       <div className="flex-1 flex flex-col min-h-screen bg-[#f4f6f9] login-dots relative">
-        <div className="lg:hidden flex items-center gap-3 px-6 pt-6">
-          <img src="/logo.png" alt="InsurVault" className="h-14 w-14 object-contain"
-            style={{ filter: 'saturate(1.4) brightness(1.1) contrast(1.05)' }} />
-          <span className="font-bold text-slate-900 text-lg">InsurVault</span>
-        </div>
-
         <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
           <div className="w-full max-w-[440px] animate-fade-in">
             <div className="login-form-card p-8 sm:p-10">
+              {/* Mobile: centered logo */}
+              <div className="flex justify-center mb-4 sm:hidden">
+                <img src="/logo.png" alt="Logo" className="h-40 w-40 object-contain"
+                  style={{ filter: 'saturate(1.4) brightness(1.1) contrast(1.05)' }} />
+              </div>
               <div className="flex items-center gap-3 mb-8">
                 <img src="/logo.png" alt="InsurVault" className="hidden sm:block h-16 w-16 object-contain shrink-0"
                   style={{ filter: 'saturate(1.4) brightness(1.1) contrast(1.05)' }} />

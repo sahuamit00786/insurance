@@ -165,8 +165,8 @@ function TimeLabel({ days }) {
 const inputCls = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm focus:outline-none focus:ring-3 focus:ring-brand-500/10 focus:border-brand-500 transition-all shadow-sm';
 
 const TABS = [
-  { key: 'upcoming', label: 'Getting Expired' },
-  { key: 'expired',  label: 'Expired'         },
+  { key: 'upcoming', label: 'Due'     },
+  { key: 'expired',  label: 'Expired' },
 ];
 
 const EXPIRY_PRESETS = [
@@ -393,7 +393,7 @@ export default function InsurancesPage() {
   return (
     <div className="space-y-5 min-w-0">
       <PageHeader
-        title="Insurances"
+        title="Policy Details"
         subtitle="All insurance policies across all clients"
         icon={ShieldCheck}
         color="brand"

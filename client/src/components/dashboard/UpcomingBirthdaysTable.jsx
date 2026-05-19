@@ -67,7 +67,7 @@ export default function UpcomingBirthdaysTable({ clients = [] }) {
       <div className="card-surface flex h-full w-full min-h-0 flex-col overflow-hidden">
         <CardHeader
           title="Upcoming Birthdays"
-          subtitle="Next 10 clients celebrating soon"
+          subtitle="Birthdays within the next 7 days (including today)"
           icon={Cake}
           action={
             <button type="button" onClick={() => nav('/clients')}

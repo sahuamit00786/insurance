@@ -55,10 +55,19 @@ export default function StaffPage() {
     setShowPw(false);
   };
 
+  const validatePassword = (pw) => {
+    if (!pw || pw.length < 8) return 'Password must be at least 8 characters';
+    if (!/[0-9]/.test(pw))   return 'Password must contain at least one digit';
+    if (!/[^A-Za-z0-9]/.test(pw)) return 'Password must contain at least one special character';
+    return null;
+  };
+
   const handleAdd = async () => {
     if (!form.name || !form.email || !form.password) {
       return toast.error('Name, email and password required');
     }
+    const pwErr = validatePassword(form.password);
+    if (pwErr) return toast.error(pwErr);
     setSaving(true);
     try {
       await createStaff(form);
@@ -196,6 +205,25 @@ export default function StaffPage() {
             {showPw ? 'Hide' : 'Show'}
           </button>
         </div>
+        {requirePassword && form.password.length > 0 && (() => {
+          const checks = [
+            { ok: form.password.length >= 8,          label: 'Min 8 characters' },
+            { ok: /[0-9]/.test(form.password),         label: 'At least one digit' },
+            { ok: /[^A-Za-z0-9]/.test(form.password),  label: 'At least one special character' },
+          ];
+          return (
+            <div className="mt-2 flex flex-col gap-1">
+              {checks.map(c => (
+                <span key={c.label} className={`flex items-center gap-1.5 text-xs font-medium ${c.ok ? 'text-emerald-600' : 'text-red-500'}`}>
+                  <span className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-white text-[9px] font-bold ${c.ok ? 'bg-emerald-500' : 'bg-red-400'}`}>
+                    {c.ok ? '✓' : '✕'}
+                  </span>
+                  {c.label}
+                </span>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -259,7 +287,12 @@ export default function StaffPage() {
             <Button variant="secondary" onClick={() => setAddOpen(false)} className="flex-1">
               Cancel
             </Button>
-            <Button loading={saving} onClick={handleAdd} className="flex-1">
+            <Button
+              loading={saving}
+              onClick={handleAdd}
+              className="flex-1"
+              disabled={saving || !form.password || form.password.length < 8 || !/[0-9]/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password)}
+            >
               Create Member
             </Button>
           </div>

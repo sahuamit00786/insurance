@@ -164,7 +164,7 @@ export default function ClientsPage() {
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"/>
         <input
           className="pl-10 pr-4 py-2 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-3 focus:ring-sky-500/10 focus:border-sky-500 w-full shadow-sm transition-all"
-          placeholder="Search name, phone, email…"
+          placeholder="Search name, phone, email, IC/passport…"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />

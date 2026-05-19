@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-  BarChart3, Download, RefreshCw, Users, ShieldCheck, CreditCard,
+  BarChart3, Download, RefreshCw, Users, ShieldCheck, CreditCard, StickyNote,
   CheckCircle2, Search, AlertTriangle, Clock, X, Columns3, Filter,
   FileSpreadsheet,
 } from 'lucide-react';
@@ -94,6 +94,7 @@ const COLUMNS = {
     { key: 'earliest_due', label: 'Earliest Due' },
     { key: 'latest_due', label: 'Latest Due' },
     { key: 'created_at', label: 'Created On' },
+    { key: 'notes', label: 'Notes' },
   ],
   insurances: [
     { key: 'client_name', label: 'Client Name' },
@@ -118,12 +119,22 @@ const COLUMNS = {
     { key: 'payment_method', label: 'Payment Method' },
     { key: 'remarks', label: 'Remarks' },
   ],
+  notes: [
+    { key: 'client_name', label: 'Client Name' },
+    { key: 'client_phone', label: 'Phone' },
+    { key: 'title', label: 'Title' },
+    { key: 'body', label: 'Note' },
+    { key: 'pinned', label: 'Pinned' },
+    { key: 'created_by', label: 'Created By' },
+    { key: 'note_time', label: 'Date & Time' },
+  ],
 };
 
 const DEFAULT_FIELDS = {
   clients: ['name', 'phone', 'email', 'insurance_count', 'total_premium', 'earliest_due'],
   insurances: ['client_name', 'policy_no', 'plan_code', 'status', 'premium_due_date', 'premium', 'days_left'],
   payments: ['client_name', 'payment_date', 'amount', 'receipt_no', 'payment_mode'],
+  notes: ['client_name', 'title', 'body', 'created_by', 'note_time'],
 };
 
 const EXPIRY_PRESETS = [
@@ -159,13 +170,23 @@ const TYPE_STYLES = {
     border: 'border-emerald-200',
     activeBg: 'bg-emerald-600/5',
   },
+  amber: {
+    ring: 'ring-amber-500',
+    bg: 'bg-amber-50',
+    icon: 'bg-amber-500 text-white',
+    iconMuted: 'bg-amber-50 text-amber-700',
+    border: 'border-amber-200',
+    activeBg: 'bg-amber-500/5',
+  },
 };
 
 const DATE_KEYS = ['issued_date', 'maturity_date', 'premium_due_date', 'payment_date', 'date_of_birth', 'earliest_due', 'latest_due', 'created_at'];
+const DATETIME_KEYS = ['note_time'];
 const CURRENCY_KEYS = ['premium', 'amount', 'total_premium'];
 
 function rawVal(key, val) {
   if (val == null) return '';
+  if (DATETIME_KEYS.includes(key)) return val ? String(val).slice(0, 19).replace('T', ' ') : '';
   if (DATE_KEYS.includes(key)) return val ? String(val).slice(0, 10) : '';
   return String(val);
 }
@@ -225,8 +246,32 @@ function CellValue({ col, val }) {
   if (CURRENCY_KEYS.includes(col.key)) {
     return <span className="text-xs font-semibold text-slate-800 tabular-nums">{formatCurrency(val)}</span>;
   }
+  if (DATETIME_KEYS.includes(col.key)) {
+    return (
+      <span className="text-xs text-slate-600 tabular-nums whitespace-nowrap">
+        {formatDate(val, 'dd MMM yyyy, h:mm a')}
+      </span>
+    );
+  }
   if (DATE_KEYS.includes(col.key)) {
     return <span className="text-xs text-slate-600">{formatDate(val)}</span>;
+  }
+  if (col.key === 'body') {
+    return (
+      <span className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed line-clamp-3" title={val}>
+        {val}
+      </span>
+    );
+  }
+  if (col.key === 'notes') {
+    const parts = val.split('\n').filter(Boolean);
+    return (
+      <div className="flex flex-col gap-1 max-w-sm">
+        {parts.map((p, i) => (
+          <span key={i} className="text-xs text-slate-700 leading-snug border-l-2 border-amber-200 pl-2">{p}</span>
+        ))}
+      </div>
+    );
   }
   return <span className="text-xs text-slate-700">{val}</span>;
 }
@@ -354,19 +399,19 @@ export default function ReportsPage() {
   const summary = useMemo(() => {
     if (!reportData?.rows?.length) return null;
     const rows = reportData.rows;
-    const amountKey = type === 'payments' ? 'amount' : type === 'clients' ? 'total_premium' : 'premium';
-    const totalAmount = rows.reduce((sum, r) => sum + (parseFloat(r[amountKey]) || 0), 0);
+    const amountKey = type === 'payments' ? 'amount' : type === 'clients' ? 'total_premium' : type === 'insurances' ? 'premium' : null;
+    const totalAmount = amountKey ? rows.reduce((sum, r) => sum + (parseFloat(r[amountKey]) || 0), 0) : 0;
     return {
       count: rows.length,
       columns: selectedCols.length,
-      totalAmount: CURRENCY_KEYS.includes(amountKey) ? totalAmount : null,
+      totalAmount: amountKey && CURRENCY_KEYS.includes(amountKey) ? totalAmount : null,
     };
   }, [reportData, type, selectedCols.length]);
 
   const dateFromLabel =
     type === 'payments' ? 'Payment from' : type === 'insurances' ? 'Due from' : 'Created from';
   const dateToLabel =
-    type === 'payments' ? 'Payment to' : type === 'insurances' ? 'Due to' : 'Created to';
+    type === 'payments' ? 'Payment to'   : type === 'insurances' ? 'Due to'   : 'Created to';
 
   return (
     <div className="space-y-4 min-w-0">
@@ -410,7 +455,7 @@ export default function ReportsPage() {
             <h3 className="text-sm font-semibold text-slate-900">Report Type</h3>
           </div>
           <div className="p-3 sm:p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               {REPORT_TYPES.map(rt => {
                 const active = type === rt.key;
                 const s = TYPE_STYLES[rt.color];
@@ -464,16 +509,8 @@ export default function ReportsPage() {
             {(COLUMNS[type] || []).map(c => {
               const on = fields.includes(c.key);
               return (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => toggleField(c.key)}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${
-                    on
-                      ? 'bg-brand-700 text-white border-brand-700 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300 hover:bg-brand-50/50'
-                  }`}
-                >
+                <button key={c.key} type="button" onClick={() => toggleField(c.key)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${on ? 'bg-brand-700 text-white border-brand-700 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300 hover:bg-brand-50/50'}`}>
                   {on && <CheckCircle2 size={11} />}
                   {c.label}
                 </button>

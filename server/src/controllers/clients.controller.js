@@ -16,8 +16,8 @@ async function list(req, res) {
   const params = [];
 
   if (search) {
-    where.push('(c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)');
-    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    where.push('(c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR c.identification_no LIKE ?)');
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
   }
 
   const andOrWhere = where.length ? `AND ${where.join(' AND ')}` : '';

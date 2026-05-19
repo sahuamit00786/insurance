@@ -19,7 +19,7 @@ export default function DashboardPage() {
   });
   const { data: clients = [], isLoading: cL } = useQuery({
     queryKey: ['dashboard-birthdays'],
-    queryFn:  () => getUpcomingBirthdays(10).then(r => r.data.data),
+    queryFn:  () => getUpcomingBirthdays(50).then(r => r.data.data),
   });
   if (sL && cL) return <PageLoader/>;
 

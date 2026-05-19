@@ -18,27 +18,27 @@ async function getUpcomingBirthdays(req, res) {
   const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 10));
 
   const [rows] = await pool.query(
-    `SELECT
-       id,
-       name,
-       date_of_birth,
-       phone,
-       CASE
-         WHEN STR_TO_DATE(CONCAT(YEAR(CURDATE()), '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d') >= CURDATE()
-         THEN STR_TO_DATE(CONCAT(YEAR(CURDATE()), '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d')
-         ELSE STR_TO_DATE(CONCAT(YEAR(CURDATE()) + 1, '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d')
-       END AS next_birthday,
-       DATEDIFF(
+    `SELECT * FROM (
+       SELECT
+         id, name, date_of_birth, phone,
          CASE
            WHEN STR_TO_DATE(CONCAT(YEAR(CURDATE()), '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d') >= CURDATE()
            THEN STR_TO_DATE(CONCAT(YEAR(CURDATE()), '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d')
            ELSE STR_TO_DATE(CONCAT(YEAR(CURDATE()) + 1, '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d')
-         END,
-         CURDATE()
-       ) AS days_until_birthday
-     FROM clients
-     WHERE date_of_birth IS NOT NULL AND is_deleted = 0
-     ORDER BY days_until_birthday ASC
+         END AS next_birthday,
+         DATEDIFF(
+           CASE
+             WHEN STR_TO_DATE(CONCAT(YEAR(CURDATE()), '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d') >= CURDATE()
+             THEN STR_TO_DATE(CONCAT(YEAR(CURDATE()), '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d')
+             ELSE STR_TO_DATE(CONCAT(YEAR(CURDATE()) + 1, '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d')
+           END,
+           CURDATE()
+         ) AS days_until_birthday
+       FROM clients
+       WHERE date_of_birth IS NOT NULL AND is_deleted = 0
+     ) t
+     WHERE t.days_until_birthday <= 7
+     ORDER BY t.days_until_birthday ASC
      LIMIT ?`,
     [limit]
   );

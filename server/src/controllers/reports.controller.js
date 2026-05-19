@@ -27,6 +27,7 @@ const REPORT_CONFIGS = {
       earliest_due:     'ins.earliest_due',
       latest_due:       'ins.latest_due',
       created_at:       'DATE(c.created_at) AS created_at',
+      notes:            `(SELECT GROUP_CONCAT(CONCAT('[', DATE_FORMAT(n.created_at,'%d %b %Y %H:%i'), '] ', IF(n.title IS NOT NULL AND n.title != '', CONCAT(n.title, ': '), ''), n.body) ORDER BY n.created_at DESC SEPARATOR '\n') FROM notes n WHERE n.client_id = c.id AND n.is_deleted = 0) AS notes`,
     },
     filterDate: 'c.created_at',
     order:      'ORDER BY c.name ASC',
@@ -75,6 +76,24 @@ const REPORT_CONFIGS = {
     },
     filterDate: 'p.payment_date',
     order:      'ORDER BY p.payment_date DESC',
+  },
+
+  notes: {
+    from: `FROM notes n
+           JOIN clients c ON n.client_id = c.id
+           LEFT JOIN users u ON n.created_by = u.id
+           WHERE n.is_deleted = 0 AND c.is_deleted = 0`,
+    columns: {
+      client_name: 'c.name AS client_name',
+      client_phone:'c.phone AS client_phone',
+      title:       'n.title',
+      body:        'n.body',
+      pinned:      "IF(n.pinned = 1, 'Yes', 'No') AS pinned",
+      created_by:  'u.name AS created_by',
+      note_time:   'n.created_at AS note_time',
+    },
+    filterDate: 'n.created_at',
+    order:      'ORDER BY c.name ASC, n.created_at DESC',
   },
 };
 
