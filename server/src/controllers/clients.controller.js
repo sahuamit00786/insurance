@@ -4,7 +4,8 @@ const { success, error } = require('../utils/response');
 const BASE_SELECT = `
   SELECT c.id, c.name, c.identification_no, c.date_of_birth,
          c.address, c.phone, c.email, c.created_at,
-         (SELECT COUNT(*) FROM insurances WHERE client_id = c.id AND is_deleted = 0) AS insurance_count
+         (SELECT COUNT(*) FROM insurances WHERE client_id = c.id AND is_deleted = 0) AS insurance_count,
+         (SELECT COUNT(*) FROM documents  WHERE client_id = c.id AND is_deleted = 0) AS doc_count
   FROM clients c
   WHERE c.is_deleted = 0
 `;

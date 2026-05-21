@@ -6,7 +6,7 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import WhatsAppPreview from '../ui/WhatsAppPreview';
 import { getTemplates } from '../../api/templates';
-import { getInsurances } from '../../api/clients';
+import { getClient, getInsurances } from '../../api/clients';
 import { openWhatsAppWeb } from '../../utils/whatsapp';
 import { formatDate } from '../../utils/formatters';
 import {
@@ -31,10 +31,18 @@ export default function SendWishesModal({ open, onClose, client }) {
     enabled: open,
   });
 
-  const { data: insurances = [] } = useQuery({
-    queryKey: ['insurances', client?.id],
-    queryFn: () => getInsurances(client.id).then(r => r.data.data),
+  const { data: fullClient, isLoading: clientLoading } = useQuery({
+    queryKey: ['client', client?.id],
+    queryFn: () => getClient(client.id).then(r => r.data.data),
     enabled: open && !!client?.id,
+  });
+
+  const effectiveClient = fullClient ?? client;
+
+  const { data: insurances = [] } = useQuery({
+    queryKey: ['insurances', effectiveClient?.id],
+    queryFn: () => getInsurances(effectiveClient.id).then(r => r.data.data),
+    enabled: open && !!effectiveClient?.id,
   });
 
   const insurance = useMemo(() => {
@@ -52,8 +60,8 @@ export default function SendWishesModal({ open, onClose, client }) {
   const selectedTemplate = templates.find(t => String(t.id) === String(templateId));
 
   const tokenValues = useMemo(
-    () => buildTokenValues(client, formatDate, insurance),
-    [client, insurance]
+    () => buildTokenValues(effectiveClient, formatDate, insurance),
+    [effectiveClient, insurance]
   );
 
   const usedTokens = useMemo(
@@ -67,13 +75,13 @@ export default function SendWishesModal({ open, onClose, client }) {
   );
 
   const missingTokens = useMemo(
-    () => getMissingTokensForClient(selectedTemplate?.body, client, formatDate, insurance),
-    [selectedTemplate?.body, client, insurance]
+    () => getMissingTokensForClient(selectedTemplate?.body, effectiveClient, formatDate, insurance),
+    [selectedTemplate?.body, effectiveClient, insurance]
   );
 
-  const missingPhone = !client?.phone?.trim();
+  const missingPhone = !effectiveClient?.phone?.trim();
 
-  const previewText = selectedTemplate && client
+  const previewText = selectedTemplate && effectiveClient
     ? applyTemplateTokens(selectedTemplate.body, tokenValues)
     : '';
 
@@ -81,6 +89,7 @@ export default function SendWishesModal({ open, onClose, client }) {
     !!selectedTemplate &&
     !!previewText &&
     !templatesLoading &&
+    !clientLoading &&
     missingTokens.length === 0 &&
     !missingPhone;
 
@@ -103,7 +112,7 @@ export default function SendWishesModal({ open, onClose, client }) {
       if (missingPhone) return toast.error('This client has no phone number');
       return toast.error('Select a template first');
     }
-    if (!openWhatsAppWeb(client.phone, previewText)) {
+    if (!openWhatsAppWeb(effectiveClient.phone, previewText)) {
       return toast.error('Invalid phone number');
     }
     onClose();
@@ -113,7 +122,7 @@ export default function SendWishesModal({ open, onClose, client }) {
     <Modal
       open={open}
       onClose={onClose}
-      title={`Send wishes — ${client?.name || ''}`}
+      title={`Send wishes — ${effectiveClient?.name || ''}`}
       size="xl"
       footer={
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
@@ -147,10 +156,10 @@ export default function SendWishesModal({ open, onClose, client }) {
         <div className="space-y-4">
           <div className="rounded-lg bg-slate-50 border border-slate-100 px-4 py-3">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Client</p>
-            <p className="text-sm font-semibold text-slate-900 mt-1">{client?.name}</p>
+            <p className="text-sm font-semibold text-slate-900 mt-1">{effectiveClient?.name}</p>
             <p className="text-xs text-slate-500 mt-0.5">
-              DOB: {client?.date_of_birth ? formatDate(client.date_of_birth) : '—'}
-              {client?.phone ? ` · ${client.phone}` : ' · No phone'}
+              DOB: {effectiveClient?.date_of_birth ? formatDate(effectiveClient.date_of_birth) : '—'}
+              {effectiveClient?.phone ? ` · ${effectiveClient.phone}` : ' · No phone'}
             </p>
           </div>
 
@@ -256,7 +265,7 @@ export default function SendWishesModal({ open, onClose, client }) {
 
         <div>
           <p className="label-base mb-2">WhatsApp preview</p>
-          <WhatsAppPreview message={previewText} contactName={client?.name} />
+          <WhatsAppPreview message={previewText} contactName={effectiveClient?.name} />
         </div>
       </div>
     </Modal>

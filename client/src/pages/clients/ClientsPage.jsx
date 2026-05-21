@@ -107,10 +107,22 @@ export default function ClientsPage() {
       label: 'Policies',
       sortable: true,
       align: 'center',
-      width: '100px',
+      width: '90px',
       render: (c) => (
         <span className="inline-flex items-center justify-center min-w-[2rem] px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100 tabular-nums">
           {c.insurance_count ?? 0}
+        </span>
+      ),
+    },
+    {
+      key: 'doc_count',
+      label: 'Documents',
+      sortable: true,
+      align: 'center',
+      width: '100px',
+      render: (c) => (
+        <span className="inline-flex items-center justify-center min-w-[2rem] px-2.5 py-0.5 rounded-md bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-100 tabular-nums">
+          {c.doc_count ?? 0}
         </span>
       ),
     },

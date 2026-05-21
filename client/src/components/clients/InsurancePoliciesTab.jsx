@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { getInsurances, createInsurance, updateInsurance, deleteInsurance } from '../../api/clients';
+import { createValueBySlug } from '../../api/lookup';
 import DataTable from '../ui/DataTable';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -33,10 +34,10 @@ import useLookup from '../../hooks/useLookup';
 import usePermission from '../../hooks/usePermission';
 
 const EMPTY_FORM = {
-  policy_no:         '',
-  identification_no: '',
-  buying_for_id:     '',
-  plan_code_id:      '',
+  policy_no:            '',
+  identification_no:    '',
+  buying_for_id:        '',
+  plan_code_id:         '',
   issued_date:       '',
   maturity_date:     '',
   premium_due_date:  '',
@@ -58,7 +59,7 @@ const FIELD_PLACEHOLDERS = {
   premium:           '0.00',
 };
 
-function PolicyForm({ form, setForm, planCodes, statuses, payModes, payMethods, relationships }) {
+function PolicyForm({ form, setForm, planCodes, statuses, payModes, payMethods, coverageProviders, onCreateCoverageProvider, onCreatePlanCode }) {
   const field = (key, label, type = 'text') => (
     <div key={key}>
       <label className="label-base">{label}</label>
@@ -73,7 +74,7 @@ function PolicyForm({ form, setForm, planCodes, statuses, payModes, payMethods, 
     </div>
   );
 
-  const sel = (key, label, options) => (
+  const sel = (key, label, options, onCreate) => (
     <div key={key}>
       <label className="label-base">{label}</label>
       <SearchableSelect
@@ -81,6 +82,7 @@ function PolicyForm({ form, setForm, planCodes, statuses, payModes, payMethods, 
         onChange={v => setForm(p => ({ ...p, [key]: v }))}
         options={options}
         placeholder="Select…"
+        onCreateNew={onCreate}
       />
     </div>
   );
@@ -90,8 +92,8 @@ function PolicyForm({ form, setForm, planCodes, statuses, payModes, payMethods, 
       <div className="grid grid-cols-2 gap-3">
         {field('policy_no',         'Policy No *')}
         {field('identification_no', 'IC / Passport No')}
-        {sel('buying_for_id',       'Buying For',      relationships)}
-        {sel('plan_code_id',        'Plan Code',       planCodes)}
+        {sel('buying_for_id',       'Coverage Provider', coverageProviders, onCreateCoverageProvider)}
+        {sel('plan_code_id',        'Plan Code',         planCodes,         onCreatePlanCode)}
         {sel('status_id',           'Status',          statuses)}
         {sel('payment_mode_id',     'Payment Mode',    payModes)}
         {sel('payment_method_id',   'Payment Method',  payMethods)}
@@ -126,11 +128,23 @@ export default function InsurancePoliciesTab({ clientId, clientIdentificationNo 
   const [delId, setDelId]       = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const planCodes     = useLookup('plan_code');
-  const statuses      = useLookup('client_status');
-  const payModes      = useLookup('payment_mode');
-  const payMethods    = useLookup('payment_method');
-  const relationships = useLookup('relationship');
+  const planCodes          = useLookup('plan_code');
+  const statuses           = useLookup('client_status');
+  const payModes           = useLookup('payment_mode');
+  const payMethods         = useLookup('payment_method');
+  const coverageProviders  = useLookup('coverage_provider');
+
+  const handleCreateCoverageProvider = async (label) => {
+    const r = await createValueBySlug('coverage_provider', label);
+    qc.invalidateQueries({ queryKey: ['lookup', 'coverage_provider'] });
+    return { value: String(r.data.data.id), label: r.data.data.lookup_name };
+  };
+
+  const handleCreatePlanCode = async (label) => {
+    const r = await createValueBySlug('plan_code', label);
+    qc.invalidateQueries({ queryKey: ['lookup', 'plan_code'] });
+    return { value: String(r.data.data.id), label: r.data.data.lookup_name };
+  };
 
   const { data: insurances = [] } = useQuery({
     queryKey: ['insurances', clientId],
@@ -213,6 +227,7 @@ export default function InsurancePoliciesTab({ clientId, clientIdentificationNo 
   };
 
   const polColumns = [
+    { key: 'buying_for',       label: 'Coverage Provider', sortable: true, render: i => i.buying_for ? <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">{i.buying_for}</span> : <span className="text-slate-300">—</span> },
     { key: 'policy_no',        label: 'Policy No',  sortable: true,  render: i => <span className="font-mono text-xs font-medium text-slate-800">{i.policy_no}</span> },
     { key: 'plan_code',        label: 'Plan Code',  sortable: true,  render: i => i.plan_code ? <span className="text-xs font-semibold bg-violet-50 text-violet-700 px-2 py-0.5 rounded-md border border-violet-100">{i.plan_code}</span> : <span className="text-slate-300">—</span> },
     { key: 'issued_date',      label: 'Issued',        sortable: true,  render: i => <span className="text-xs text-slate-600">{formatDate(i.issued_date)}</span> },
@@ -269,7 +284,9 @@ export default function InsurancePoliciesTab({ clientId, clientIdentificationNo 
           form={form} setForm={setForm}
           planCodes={planCodes} statuses={statuses}
           payModes={payModes} payMethods={payMethods}
-          relationships={relationships}
+          coverageProviders={coverageProviders}
+          onCreateCoverageProvider={handleCreateCoverageProvider}
+          onCreatePlanCode={handleCreatePlanCode}
         />
       </Modal>
 

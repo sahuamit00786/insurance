@@ -20,7 +20,7 @@ async function getUpcomingBirthdays(req, res) {
   const [rows] = await pool.query(
     `SELECT * FROM (
        SELECT
-         id, name, date_of_birth, phone,
+         id, name, date_of_birth, address, phone, email,
          CASE
            WHEN STR_TO_DATE(CONCAT(YEAR(CURDATE()), '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d') >= CURDATE()
            THEN STR_TO_DATE(CONCAT(YEAR(CURDATE()), '-', DATE_FORMAT(date_of_birth, '%m-%d')), '%Y-%m-%d')

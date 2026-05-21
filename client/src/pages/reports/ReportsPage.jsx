@@ -94,10 +94,12 @@ const COLUMNS = {
     { key: 'earliest_due', label: 'Earliest Due' },
     { key: 'latest_due', label: 'Latest Due' },
     { key: 'created_at', label: 'Created On' },
+    { key: 'doc_count', label: 'Documents' },
     { key: 'notes', label: 'Notes' },
   ],
   insurances: [
     { key: 'client_name', label: 'Client Name' },
+    { key: 'coverage_provider', label: 'Coverage Provider' },
     { key: 'policy_no', label: 'Policy No' },
     { key: 'plan_code', label: 'Plan Code' },
     { key: 'status', label: 'Status' },
@@ -243,6 +245,20 @@ function CellValue({ col, val }) {
       </span>
     );
   }
+  if (col.key === 'doc_count') {
+    return (
+      <span className="inline-flex items-center justify-center min-w-[1.5rem] px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-100">
+        {val}
+      </span>
+    );
+  }
+  if (col.key === 'coverage_provider') {
+    return (
+      <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+        {val}
+      </span>
+    );
+  }
   if (CURRENCY_KEYS.includes(col.key)) {
     return <span className="text-xs font-semibold text-slate-800 tabular-nums">{formatCurrency(val)}</span>;
   }
@@ -302,9 +318,10 @@ export default function ReportsPage() {
   const [fields, setFields] = useState(DEFAULT_FIELDS.clients);
   const [clientId, setClientId] = useState('');
   const [search, setSearch] = useState('');
-  const [planCodeId, setPlanCodeId] = useState('');
-  const [statusId, setStatusId] = useState('');
-  const [payModeId, setPayModeId] = useState('');
+  const [planCodeId, setPlanCodeId]     = useState('');
+  const [statusId, setStatusId]         = useState('');
+  const [payModeId, setPayModeId]       = useState('');
+  const [buyingForId, setBuyingForId]   = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [expiryDays, setExpiryDays] = useState('');
@@ -323,6 +340,10 @@ export default function ReportsPage() {
   const { data: payModes = [] } = useQuery({
     queryKey: ['lookup', 'payment_mode'],
     queryFn: () => getValues('payment_mode').then(r => r.data.data),
+  });
+  const { data: coverageProviders = [] } = useQuery({
+    queryKey: ['lookup', 'coverage_provider'],
+    queryFn: () => getValues('coverage_provider').then(r => r.data.data),
   });
   const { data: allClients = [] } = useQuery({
     queryKey: ['clients-list-all'],
@@ -348,6 +369,7 @@ export default function ReportsPage() {
     setPlanCodeId('');
     setStatusId('');
     setPayModeId('');
+    setBuyingForId('');
     setFromDate('');
     setToDate('');
     setExpiryDays('');
@@ -360,13 +382,14 @@ export default function ReportsPage() {
     setPlanCodeId('');
     setStatusId('');
     setPayModeId('');
+    setBuyingForId('');
     setFromDate('');
     setToDate('');
     setExpiryDays('');
     setExpired('');
   };
 
-  const activeFilters = [clientId, search, planCodeId, statusId, payModeId, fromDate, toDate, expiryDays, expired].filter(Boolean).length;
+  const activeFilters = [clientId, search, planCodeId, statusId, payModeId, buyingForId, fromDate, toDate, expiryDays, expired].filter(Boolean).length;
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -379,6 +402,7 @@ export default function ReportsPage() {
         plan_code_id: planCodeId || undefined,
         status_id: statusId || undefined,
         payment_mode_id: payModeId || undefined,
+        buying_for_id: buyingForId || undefined,
         from: fromDate || undefined,
         to: toDate || undefined,
         expiry_days: expiryDays || undefined,
@@ -571,6 +595,17 @@ export default function ReportsPage() {
 
             {type === 'insurances' && (
               <>
+                <div>
+                  <label className="label-base text-xs">Coverage Provider</label>
+                  <select className="input-base mt-1" value={buyingForId} onChange={e => setBuyingForId(e.target.value)}>
+                    <option value="">All providers</option>
+                    {coverageProviders.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.lookup_name ?? p.value}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="label-base text-xs">Plan code</label>
                   <select className="input-base mt-1" value={planCodeId} onChange={e => setPlanCodeId(e.target.value)}>

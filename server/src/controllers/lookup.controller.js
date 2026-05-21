@@ -87,7 +87,21 @@ async function deleteValue(req, res) {
   return success(res, { message: 'Deleted' });
 }
 
+async function createValueBySlug(req, res) {
+  const { slug } = req.params;
+  const { value } = req.body;
+  if (!value) return error(res, 'value required');
+  const [cats] = await pool.query('SELECT id FROM lookup_categories WHERE slug = ?', [slug]);
+  if (!cats.length) return error(res, 'Category not found', 404);
+  const [result] = await pool.query(
+    'INSERT INTO lookup_values (category_id, value, sort_order, is_active) VALUES (?,?,?,?)',
+    [cats[0].id, value.trim(), 0, 1]
+  );
+  const [rows] = await pool.query(`${LOOKUP_ITEM_SELECT} WHERE lv.id = ?`, [result.insertId]);
+  return success(res, rows[0], 201);
+}
+
 module.exports = {
   listCategories, createCategory, listAllValues, listValues,
-  createValue, updateValue, deleteValue,
+  createValue, createValueBySlug, updateValue, deleteValue,
 };

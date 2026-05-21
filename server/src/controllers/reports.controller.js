@@ -27,6 +27,7 @@ const REPORT_CONFIGS = {
       earliest_due:     'ins.earliest_due',
       latest_due:       'ins.latest_due',
       created_at:       'DATE(c.created_at) AS created_at',
+      doc_count:        '(SELECT COUNT(*) FROM documents d WHERE d.client_id = c.id AND d.is_deleted = 0) AS doc_count',
       notes:            `(SELECT GROUP_CONCAT(CONCAT('[', DATE_FORMAT(n.created_at,'%d %b %Y %H:%i'), '] ', IF(n.title IS NOT NULL AND n.title != '', CONCAT(n.title, ': '), ''), n.body) ORDER BY n.created_at DESC SEPARATOR '\n') FROM notes n WHERE n.client_id = c.id AND n.is_deleted = 0) AS notes`,
     },
     filterDate: 'c.created_at',
@@ -40,19 +41,21 @@ const REPORT_CONFIGS = {
            LEFT JOIN lookup_values st  ON i.status_id         = st.id
            LEFT JOIN lookup_values pm  ON i.payment_mode_id   = pm.id
            LEFT JOIN lookup_values pmt ON i.payment_method_id = pmt.id
+           LEFT JOIN lookup_values bf  ON i.buying_for_id     = bf.id
            WHERE i.is_deleted = 0 AND c.is_deleted = 0`,
     columns: {
-      client_name:       'c.name AS client_name',
-      policy_no:         'i.policy_no',
-      plan_code:         'pc.value AS plan_code',
-      status:            'st.value AS status',
-      payment_mode:      'pm.value AS payment_mode',
-      payment_method:    'pmt.value AS payment_method',
-      issued_date:       'i.issued_date',
-      maturity_date:     'i.maturity_date',
-      premium_due_date:  'i.premium_due_date',
-      premium:           'i.premium',
-      days_left:         'DATEDIFF(i.premium_due_date, CURDATE()) AS days_left',
+      client_name:        'c.name AS client_name',
+      coverage_provider:  'bf.value AS coverage_provider',
+      policy_no:          'i.policy_no',
+      plan_code:          'pc.value AS plan_code',
+      status:             'st.value AS status',
+      payment_mode:       'pm.value AS payment_mode',
+      payment_method:     'pmt.value AS payment_method',
+      issued_date:        'i.issued_date',
+      maturity_date:      'i.maturity_date',
+      premium_due_date:   'i.premium_due_date',
+      premium:            'i.premium',
+      days_left:          'DATEDIFF(i.premium_due_date, CURDATE()) AS days_left',
     },
     filterDate: 'i.premium_due_date',
     order:      'ORDER BY i.premium_due_date ASC',
@@ -102,7 +105,7 @@ async function generate(req, res) {
     type, fields,
     from: fromDate, to: toDate,
     search, client_id,
-    status_id, plan_code_id, payment_mode_id,
+    status_id, plan_code_id, payment_mode_id, buying_for_id,
     expiry_days, expired,
   } = req.query;
 
@@ -136,6 +139,7 @@ async function generate(req, res) {
     if (plan_code_id)    { where.push('i.plan_code_id = ?');    params.push(plan_code_id);    }
     if (status_id)       { where.push('i.status_id = ?');       params.push(status_id);       }
     if (payment_mode_id) { where.push('i.payment_mode_id = ?'); params.push(payment_mode_id); }
+    if (buying_for_id)   { where.push('i.buying_for_id = ?');   params.push(buying_for_id);   }
 
     if (expired === 'true') {
       where.push('i.premium_due_date IS NOT NULL AND DATEDIFF(i.premium_due_date, CURDATE()) < 0');

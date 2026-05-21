@@ -21,6 +21,7 @@ import { formatDate, formatCurrency } from '../../utils/formatters';
 import useLookup from '../../hooks/useLookup';
 import usePermission from '../../hooks/usePermission';
 import SearchableSelect from '../../components/ui/SearchableSelect';
+import { createValueBySlug } from '../../api/lookup';
 
 /* ── Client search picker ────────────────────────────────────────────── */
 function ClientPicker({ value, onChange }) {
@@ -85,7 +86,7 @@ const EMPTY_FORM = {
 
 function toDate(v) { return v ? String(v).slice(0, 10) : ''; }
 
-function InsuranceForm({ form, setForm, planCodes, statuses, payModes, payMethods, relationships, isEdit }) {
+function InsuranceForm({ form, setForm, planCodes, statuses, payModes, payMethods, coverageProviders, onCreateCoverageProvider, onCreatePlanCode, isEdit }) {
   const inp = (key, label, type = 'text') => (
     <div key={key}>
       <label className="label-base">{label}</label>
@@ -94,7 +95,7 @@ function InsuranceForm({ form, setForm, planCodes, statuses, payModes, payMethod
         onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}/>
     </div>
   );
-  const sel = (key, label, options) => (
+  const sel = (key, label, options, onCreate) => (
     <div key={key}>
       <label className="label-base">{label}</label>
       <SearchableSelect
@@ -102,6 +103,7 @@ function InsuranceForm({ form, setForm, planCodes, statuses, payModes, payMethod
         onChange={v => setForm(p => ({ ...p, [key]: v }))}
         options={options}
         placeholder="Select…"
+        onCreateNew={onCreate}
       />
     </div>
   );
@@ -120,8 +122,8 @@ function InsuranceForm({ form, setForm, planCodes, statuses, payModes, payMethod
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {inp('policy_no',        'Policy No *')}
         {inp('identification_no','IC / Passport No')}
-        {sel('buying_for_id',    'Buying For',     relationships)}
-        {sel('plan_code_id',     'Plan Code',      planCodes)}
+        {sel('buying_for_id',    'Coverage Provider', coverageProviders, onCreateCoverageProvider)}
+        {sel('plan_code_id',     'Plan Code',         planCodes,         onCreatePlanCode)}
         {sel('status_id',        'Status',         statuses)}
         {sel('payment_mode_id',  'Payment Mode',   payModes)}
         {sel('payment_method_id','Payment Method', payMethods)}
@@ -183,12 +185,13 @@ export default function InsurancesPage() {
   const canUpdate = usePermission('insurances', 'update');
   const canDelete = usePermission('insurances', 'delete');
 
-  const [tab,           setTab]          = useState('upcoming');
-  const [search,        setSearch]       = useState('');
-  const [planCodeId,    setPlanCodeId]   = useState('');
-  const [statusId,      setStatusId]     = useState('');
-  const [paymentModeId, setPaymentModeId]= useState('');
-  const [expiryDays,    setExpiryDays]   = useState('');
+  const [tab,              setTab]             = useState('upcoming');
+  const [search,           setSearch]          = useState('');
+  const [planCodeId,       setPlanCodeId]      = useState('');
+  const [statusId,         setStatusId]        = useState('');
+  const [paymentModeId,    setPaymentModeId]   = useState('');
+  const [coverageProviderId, setCoverageProviderId] = useState('');
+  const [expiryDays,       setExpiryDays]      = useState('');
   const [dateType,      setDateType]     = useState('issued');
   const [dateFrom,      setDateFrom]     = useState('');
   const [dateTo,        setDateTo]       = useState('');
@@ -207,20 +210,33 @@ export default function InsurancesPage() {
     enabled:  modal.open && !modal.ins && !!form.client?.id,
   });
 
-  const planCodes     = useLookup('plan_code');
-  const statuses      = useLookup('client_status');
-  const payModes      = useLookup('payment_mode');
-  const payMethods    = useLookup('payment_method');
-  const relationships = useLookup('relationship');
+  const planCodes         = useLookup('plan_code');
+  const statuses          = useLookup('client_status');
+  const payModes          = useLookup('payment_mode');
+  const payMethods        = useLookup('payment_method');
+  const coverageProviders = useLookup('coverage_provider');
+
+  const handleCreateCoverageProvider = async (label) => {
+    const r = await createValueBySlug('coverage_provider', label);
+    qc.invalidateQueries({ queryKey: ['lookup', 'coverage_provider'] });
+    return { value: String(r.data.data.id), label: r.data.data.lookup_name };
+  };
+
+  const handleCreatePlanCode = async (label) => {
+    const r = await createValueBySlug('plan_code', label);
+    qc.invalidateQueries({ queryKey: ['lookup', 'plan_code'] });
+    return { value: String(r.data.data.id), label: r.data.data.lookup_name };
+  };
 
   const switchTab = t => { setTab(t); setPage(1); setExpiryDays(''); };
 
   const filters = {
-    search:          search        || undefined,
-    plan_code_id:    planCodeId    || undefined,
-    status_id:       statusId      || undefined,
-    payment_mode_id: paymentModeId || undefined,
-    expiry_days:     expiryDays    || undefined,
+    search:            search              || undefined,
+    plan_code_id:      planCodeId          || undefined,
+    status_id:         statusId            || undefined,
+    payment_mode_id:   paymentModeId       || undefined,
+    buying_for_id:     coverageProviderId  || undefined,
+    expiry_days:       expiryDays          || undefined,
     date_type:       dateType,
     date_from:       dateFrom      || undefined,
     date_to:         dateTo        || undefined,
@@ -243,11 +259,11 @@ export default function InsurancesPage() {
 
   const resetFilters = () => {
     setSearch(''); setPlanCodeId(''); setStatusId('');
-    setPaymentModeId(''); setExpiryDays('');
+    setPaymentModeId(''); setCoverageProviderId(''); setExpiryDays('');
     setDateType('issued'); setDateFrom(''); setDateTo(''); setPage(1);
   };
 
-  const activeFilterCount = [planCodeId, statusId, paymentModeId, expiryDays, dateFrom, dateTo].filter(Boolean).length;
+  const activeFilterCount = [planCodeId, statusId, paymentModeId, coverageProviderId, expiryDays, dateFrom, dateTo].filter(Boolean).length;
   const dateTypeLabel = dateType === 'due' ? 'Due' : dateType === 'maturity' ? 'Maturity' : 'Issued';
 
   const openCreate = () => { setForm(EMPTY_FORM); setModal({ open: true, ins: null }); };
@@ -332,6 +348,12 @@ export default function InsurancesPage() {
           </ClientNameLink>
         </div>
       ),
+    },
+    {
+      key: 'buying_for', label: 'Coverage Provider', sortable: false,
+      render: row => row.buying_for
+        ? <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">{row.buying_for}</span>
+        : <span className="text-slate-400">—</span>,
     },
     {
       key: 'policy_no', label: 'Policy No', sortable: false,
@@ -458,6 +480,10 @@ export default function InsurancesPage() {
       {showFilters && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 animate-slide-up">
           <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Coverage Provider</label>
+            <SearchableSelect value={coverageProviderId} onChange={v => { setCoverageProviderId(v); setPage(1); }} options={coverageProviders} placeholder="All providers"/>
+          </div>
+          <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Plan Code</label>
             <SearchableSelect value={planCodeId} onChange={v => { setPlanCodeId(v); setPage(1); }} options={planCodesLookup.map(o => ({ value: o.id, label: o.lookup_name }))} placeholder="All plans"/>
           </div>
@@ -575,7 +601,9 @@ export default function InsurancesPage() {
           form={form} setForm={setForm}
           planCodes={planCodes} statuses={statuses}
           payModes={payModes} payMethods={payMethods}
-          relationships={relationships}
+          coverageProviders={coverageProviders}
+          onCreateCoverageProvider={handleCreateCoverageProvider}
+          onCreatePlanCode={handleCreatePlanCode}
           isEdit={!!modal.ins}
         />
       </Modal>

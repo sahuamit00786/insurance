@@ -4,7 +4,7 @@ const { success, error } = require('../utils/response');
 /* GET /api/insurances — paginated global list with filters */
 async function listAll(req, res) {
   const {
-    search, plan_code_id, status_id, payment_mode_id,
+    search, plan_code_id, status_id, payment_mode_id, buying_for_id,
     date_type = 'issued',
     date_from, date_to,
     maturity_from, maturity_to,
@@ -28,6 +28,7 @@ async function listAll(req, res) {
   if (plan_code_id)    { where.push('i.plan_code_id = ?');    params.push(plan_code_id);    }
   if (status_id)       { where.push('i.status_id = ?');       params.push(status_id);       }
   if (payment_mode_id) { where.push('i.payment_mode_id = ?'); params.push(payment_mode_id); }
+  if (buying_for_id)   { where.push('i.buying_for_id = ?');   params.push(buying_for_id);   }
 
   if (expired === 'true') {
     where.push('i.premium_due_date IS NOT NULL AND DATEDIFF(i.premium_due_date, CURDATE()) < 0');
