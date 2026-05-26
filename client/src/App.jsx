@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 
 import Layout          from './components/layout/Layout';
 import LoginPage       from './pages/auth/LoginPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import DashboardPage   from './pages/dashboard/DashboardPage';
 import ClientsPage     from './pages/clients/ClientsPage';
 import ClientDetailPage from './pages/clients/ClientDetailPage';
@@ -56,7 +57,8 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage/>}/>
+          <Route path="/login"          element={<LoginPage/>}/>
+          <Route path="/reset-password" element={<ResetPasswordPage/>}/>
           <Route element={<Layout/>}>
             <Route index element={<SmartRedirect/>}/>
             <Route path="/dashboard"   element={<RequirePermission module="dashboard"><DashboardPage/></RequirePermission>}/>

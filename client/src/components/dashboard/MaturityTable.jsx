@@ -18,15 +18,16 @@ function humanTime(days) {
 }
 
 export default function MaturityTable() {
-  const [page, setPage] = useState(1);
+  const [page, setPage]         = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [confirmClear, setConfirmClear] = useState(false);
   const [open, setOpen] = useState(false);
 
   const { dismissed, dismiss, dismissAll } = useDismissed('insur_dismissed_maturity');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard-maturity', page],
-    queryFn:  () => getMaturity(page).then(r => r.data.data),
+    queryKey: ['dashboard-maturity', page, pageSize],
+    queryFn:  () => getMaturity({ page, limit: pageSize }).then(r => r.data.data),
     keepPreviousData: true,
   });
 
@@ -57,6 +58,12 @@ export default function MaturityTable() {
           {row.policy_no}
         </span>
       ),
+    },
+    {
+      key: 'plan_code', label: 'Plan Code', sortable: false,
+      render: row => row.plan_code
+        ? <span className="text-xs font-semibold bg-violet-50 text-violet-700 px-2 py-0.5 rounded-md border border-violet-100">{row.plan_code}</span>
+        : <span className="text-slate-300">—</span>,
     },
     {
       key: 'maturity_date', label: 'Maturity Date', sortable: false,
@@ -131,9 +138,9 @@ export default function MaturityTable() {
           serverSide
           totalRows={Math.max(0, total - dismissed.size)}
           page={page}
-          pageSize={10}
+          pageSize={pageSize}
           onPageChange={setPage}
-          onPageSizeChange={() => {}}
+          onPageSizeChange={v => { setPageSize(v); setPage(1); }}
           emptyMessage="No policies maturing in the next 30 days"
           emptyIcon={<CheckCircle size={22} className="text-emerald-400" />}
         />}

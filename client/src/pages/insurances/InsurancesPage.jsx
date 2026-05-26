@@ -196,6 +196,7 @@ export default function InsurancesPage() {
   const [dateFrom,      setDateFrom]     = useState('');
   const [dateTo,        setDateTo]       = useState('');
   const [page,          setPage]         = useState(1);
+  const [pageSize,      setPageSize]     = useState(20);
   const [showFilters,   setShowFilters]  = useState(false);
 
   const [modal,   setModal]   = useState({ open: false, ins: null });
@@ -241,7 +242,7 @@ export default function InsurancesPage() {
     date_from:       dateFrom      || undefined,
     date_to:         dateTo        || undefined,
     expired:         tab === 'expired' ? 'true' : 'false',
-    page, limit: 20,
+    page, limit: pageSize,
   };
 
   const { data, isLoading } = useQuery({
@@ -537,9 +538,9 @@ export default function InsurancesPage() {
         serverSide
         totalRows={total}
         page={page}
-        pageSize={20}
+        pageSize={pageSize}
         onPageChange={setPage}
-        onPageSizeChange={() => {}}
+        onPageSizeChange={v => { setPageSize(v); setPage(1); }}
         emptyMessage="No insurance records found"
         emptyIcon={<ShieldCheck size={22} className="text-slate-300"/>}
         dense

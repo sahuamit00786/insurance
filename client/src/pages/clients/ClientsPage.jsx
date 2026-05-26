@@ -188,7 +188,7 @@ export default function ClientsPage() {
         loading={isLoading}
         rowKey={r => r.id}
         defaultSort={{ key: 'name', dir: 'asc' }}
-        defaultPageSize={15}
+        defaultPageSize={25}
         emptyMessage={search ? 'No clients match your search' : 'No clients yet — add your first client'}
         emptyIcon={<Users size={24} className="text-slate-300" />}
       />

@@ -3,13 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Clock, CheckCircle, ShieldAlert, Send, X, Trash2, EyeOff, Eye } from 'lucide-react';
 import DataTable from '../ui/DataTable';
 import { CardHeader } from '../ui/Card';
-import { Tabs } from '../ui/Tabs';
 import { getExpiry } from '../../api/dashboard';
 import { formatDate } from '../../utils/formatters';
 import ClientNameLink from '../clients/ClientNameLink';
 import SendWishesModal from './SendWishesModal';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import useDismissed from '../../hooks/useDismissed';
+import useLookup from '../../hooks/useLookup';
+import SearchableSelect from '../ui/SearchableSelect';
 
 function humanTime(days) {
   const n = Math.abs(parseInt(days));
@@ -20,16 +21,20 @@ function humanTime(days) {
 }
 
 const TABS = [
-  { key: 'expiring', label: 'Getting Expired', icon: <Clock size={14}/> },
-  { key: 'expired',  label: 'Expired',         icon: <AlertTriangle size={14}/> },
+  { key: 'expiring', label: 'Due',     icon: <Clock size={14}/> },
+  { key: 'expired',  label: 'Expired', icon: <AlertTriangle size={14}/> },
 ];
 
 export default function ExpiryTable() {
-  const [tab, setTab] = useState('expiring');
-  const [page, setPage] = useState(1);
+  const [tab, setTab]               = useState('expiring');
+  const [page, setPage]             = useState(1);
+  const [pageSize, setPageSize]     = useState(10);
+  const [planCodeId, setPlanCodeId] = useState('');
   const [wishClient, setWishClient] = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]             = useState(false);
+
+  const planCodes = useLookup('plan_code');
 
   const { dismissed: dismissedExpiring, dismiss: dismissExpiring, dismissAll: dismissAllExpiring } = useDismissed('insur_dismissed_expiry_expiring');
   const { dismissed: dismissedExpired,  dismiss: dismissExpired,  dismissAll: dismissAllExpired  } = useDismissed('insur_dismissed_expiry_expired');
@@ -41,8 +46,8 @@ export default function ExpiryTable() {
   const handleTabChange = (key) => { setTab(key); setPage(1); };
 
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard-expiry', tab, page],
-    queryFn:  () => getExpiry({ type: tab, page }).then(r => r.data.data),
+    queryKey: ['dashboard-expiry', tab, page, pageSize, planCodeId],
+    queryFn:  () => getExpiry({ type: tab, page, limit: pageSize, plan_code_id: planCodeId || undefined }).then(r => r.data.data),
     keepPreviousData: true,
   });
 
@@ -71,6 +76,12 @@ export default function ExpiryTable() {
           {item.policy_no}
         </span>
       ),
+    },
+    {
+      key: 'plan_code', label: 'Plan Code', sortable: false,
+      render: item => item.plan_code
+        ? <span className="text-xs font-semibold bg-violet-50 text-violet-700 px-2 py-0.5 rounded-md border border-violet-100">{item.plan_code}</span>
+        : <span className="text-slate-300">—</span>,
     },
     {
       key: 'due_date', label: 'Premium Due Date', sortable: false,
@@ -167,8 +178,32 @@ export default function ExpiryTable() {
 
         {open && (
           <>
-            <div className="px-5 border-b border-slate-100">
-              <Tabs tabs={TABS} active={tab} onChange={handleTabChange}/>
+            <div className="flex items-center justify-between gap-3 px-4 border-b border-slate-100">
+              <div className="flex gap-1 -mb-px">
+                {TABS.map(t => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => handleTabChange(t.key)}
+                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                      tab === t.key
+                        ? 'border-brand-600 text-brand-700'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200'
+                    }`}
+                  >
+                    <span className={tab === t.key ? 'text-brand-600' : 'text-slate-400'}>{t.icon}</span>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="w-44 shrink-0">
+                <SearchableSelect
+                  value={planCodeId}
+                  onChange={v => { setPlanCodeId(v); setPage(1); }}
+                  options={planCodes}
+                  placeholder="All plan codes"
+                />
+              </div>
             </div>
 
             <DataTable
@@ -179,9 +214,9 @@ export default function ExpiryTable() {
               serverSide
               totalRows={Math.max(0, total - dismissed.size)}
               page={page}
-              pageSize={10}
+              pageSize={pageSize}
               onPageChange={setPage}
-              onPageSizeChange={() => {}}
+              onPageSizeChange={v => { setPageSize(v); setPage(1); }}
               emptyMessage={tab === 'expiring' ? 'No policies expiring in the next 7 days' : 'No policies expired in the last 7 days'}
               emptyIcon={<CheckCircle size={22} className="text-emerald-400"/>}
               dense

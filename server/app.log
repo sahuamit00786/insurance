@@ -1,0 +1,15 @@
+[2026-05-26T06:24:39.695Z] [INFO] ✓ MySQL connected — database: caauto_insurance_db
+[2026-05-26T06:24:39.702Z] [INFO] ✓ Server running on port 30003
+[2026-05-26T06:28:04.473Z] [INFO] ✓ MySQL connected — database: insurvau_testing_db
+[2026-05-26T06:28:04.474Z] [ERROR] http.Server.listen() was called more than once, ignore.
+[2026-05-26T06:28:05.807Z] [ERROR] {"name":"ValidationError","code":"ERR_ERL_UNEXPECTED_X_FORWARDED_FOR","help":"https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/"}
+[2026-05-26T06:28:05.809Z] [INFO] [verifyOtp] body: {"email":"sahuamit00786@gmail.com","otp":"318826"}
+[2026-05-26T06:28:05.826Z] [INFO] ✓ MySQL connected — database: insurvau_testing_db
+[2026-05-26T06:28:05.826Z] [ERROR] http.Server.listen() was called more than once, ignore.
+[2026-05-26T06:28:05.832Z] [INFO] [verifyOtp] users found: 1
+[2026-05-26T06:28:05.834Z] [INFO] [verifyOtp] all reset rows for user: [{"id":7,"otp":"318826","used_at":null,"expires_at":"2026-05-26T06:37:31.000Z","now":"2026-05-26T14:28:05.000Z"}]
+[2026-05-26T06:28:05.835Z] [INFO] [verifyOtp] matching reset rows: 0
+[2026-05-26T06:29:17.658Z] [INFO] ✓ MySQL connected — database: caauto_insurance_db
+[2026-05-26T06:29:17.664Z] [INFO] ✓ Server running on port 30003
+[2026-05-26T06:29:26.219Z] [INFO] ✓ MySQL connected — database: caauto_insurance_db
+[2026-05-26T06:29:26.224Z] [INFO] ✓ Server running on port 30003

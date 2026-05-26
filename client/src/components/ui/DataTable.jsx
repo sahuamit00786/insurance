@@ -5,7 +5,7 @@ import {
   Inbox,
 } from 'lucide-react';
 
-const PAGE_SIZES = [10, 25, 50, 100];
+const BASE_PAGE_SIZES = [10, 25, 50, 100];
 
 function SortIcon({ active, dir }) {
   if (!active) return <ChevronsUpDown size={13} className="text-slate-300 shrink-0" />;
@@ -107,11 +107,17 @@ export default function DataTable({
   const [cSortDir, setCsortDir] = useState(defaultSort?.dir ?? 'asc');
   const [cPage,    setCpage]    = useState(1);
   const [cSize,    setCsize]    = useState(defaultPageSize);
+  const [ssSize,   setSsSize]   = useState(pageSizeProp ?? defaultPageSize);
 
-  const sortKey = serverSide ? sortKeyProp  : cSortKey;
-  const sortDir = serverSide ? sortDirProp  : cSortDir;
-  const page    = serverSide ? pageProp     : cPage;
-  const pageSize= serverSide ? pageSizeProp : cSize;
+  const pageSizes = useMemo(() => {
+    const init = serverSide ? (pageSizeProp ?? defaultPageSize) : defaultPageSize;
+    return BASE_PAGE_SIZES.includes(init) ? BASE_PAGE_SIZES : [...BASE_PAGE_SIZES, init].sort((a, b) => a - b);
+  }, []);
+
+  const sortKey = serverSide ? sortKeyProp : cSortKey;
+  const sortDir = serverSide ? sortDirProp : cSortDir;
+  const page    = serverSide ? pageProp    : cPage;
+  const pageSize= serverSide ? ssSize      : cSize;
 
   /* ── Client-side sort+paginate ── */
   const sorted = useMemo(() => {
@@ -147,7 +153,10 @@ export default function DataTable({
   };
 
   const handlePage = (n) => { serverSide ? onPageChange?.(n) : setCpage(n); };
-  const handleSize = (n) => { serverSide ? onPageSizeChange?.(n) : (setCsize(n), setCpage(1)); };
+  const handleSize = (n) => {
+    if (serverSide) { setSsSize(n); onPageSizeChange?.(n); onPageChange?.(1); }
+    else { setCsize(n); setCpage(1); }
+  };
 
   /* ── Page window ── */
   const pageWindow = useMemo(() => {
@@ -256,7 +265,7 @@ export default function DataTable({
               onChange={e => handleSize(Number(e.target.value))}
               className="h-7 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 transition-all"
             >
-              {PAGE_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+              {pageSizes.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 

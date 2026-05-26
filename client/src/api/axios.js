@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'https://api-insurance.upgrowventures.com/api';
+const API_URL = 'https://api-murale.insur-vault.com/api';
 // const API_URL = 'http://localhost:30003/api';
-
 
 const api = axios.create({
   baseURL: API_URL,

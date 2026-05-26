@@ -16,12 +16,13 @@ const ROLE_VARIANT = {
 };
 
 export default function ProfileModal({ open, onClose }) {
+  const storeUser  = useAuthStore(s => s.user);
   const updateUser = useAuthStore(s => s.updateUser);
   const [form, setForm] = useState({
-    name: '',
-    email: '',
+    name:             storeUser?.name  || '',
+    email:            storeUser?.email || '',
     current_password: '',
-    password: '',
+    password:         '',
     confirm_password: '',
   });
   const [showCurrentPw, setShowCurrentPw] = useState(false);
@@ -38,19 +39,23 @@ export default function ProfileModal({ open, onClose }) {
 
   useEffect(() => {
     if (!open) {
-      setForm({
-        name: '',
-        email: '',
+      setForm(p => ({
+        ...p,
         current_password: '',
-        password: '',
+        password:         '',
         confirm_password: '',
-      });
+      }));
       setShowCurrentPw(false);
       setShowNewPw(false);
       return;
     }
+    setForm(p => ({
+      ...p,
+      name:  storeUser?.name  || p.name,
+      email: storeUser?.email || p.email,
+    }));
     refetch();
-  }, [open, refetch]);
+  }, [open, refetch, storeUser?.name, storeUser?.email]);
 
   useEffect(() => {
     if (profile) {
@@ -71,9 +76,10 @@ export default function ProfileModal({ open, onClose }) {
     if (form.password || form.confirm_password || form.current_password) {
       if (!form.current_password) return toast.error('Enter your current password');
       if (!form.password) return toast.error('Enter a new password');
-      if (form.password !== form.confirm_password) {
-        return toast.error('New passwords do not match');
-      }
+      if (form.password.length < 8)           return toast.error('Password must be at least 8 characters');
+      if (!/[0-9]/.test(form.password))        return toast.error('Password must contain at least one digit');
+      if (!/[^A-Za-z0-9]/.test(form.password)) return toast.error('Password must contain at least one special character');
+      if (form.password !== form.confirm_password) return toast.error('New passwords do not match');
     }
 
     setSaving(true);
@@ -210,7 +216,7 @@ export default function ProfileModal({ open, onClose }) {
                   <input
                     type={showNewPw ? 'text' : 'password'}
                     className="input-base pr-16"
-                    placeholder="Min. 6 characters"
+                    placeholder="Create a strong password"
                     value={form.password}
                     onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                     autoComplete="new-password"
@@ -223,6 +229,25 @@ export default function ProfileModal({ open, onClose }) {
                     {showNewPw ? 'Hide' : 'Show'}
                   </button>
                 </div>
+                {form.password.length > 0 && (() => {
+                  const checks = [
+                    { ok: form.password.length >= 8,           label: 'Min 8 characters' },
+                    { ok: /[0-9]/.test(form.password),          label: 'At least one digit' },
+                    { ok: /[^A-Za-z0-9]/.test(form.password),   label: 'At least one special character' },
+                  ];
+                  return (
+                    <div className="mt-2 flex flex-col gap-1">
+                      {checks.map(c => (
+                        <span key={c.label} className={`flex items-center gap-1.5 text-xs font-medium ${c.ok ? 'text-emerald-600' : 'text-red-500'}`}>
+                          <span className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-white text-[9px] font-bold ${c.ok ? 'bg-emerald-500' : 'bg-red-400'}`}>
+                            {c.ok ? '✓' : '✕'}
+                          </span>
+                          {c.label}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <label className="label-base">Confirm new password</label>

@@ -85,6 +85,10 @@ export default function StaffPage() {
 
   const handleEdit = async () => {
     if (!form.name || !form.email) return toast.error('Name and email required');
+    if (form.password) {
+      const pwErr = validatePassword(form.password);
+      if (pwErr) return toast.error(pwErr);
+    }
     setSaving(true);
     try {
       const payload = {
@@ -195,7 +199,7 @@ export default function StaffPage() {
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-16 text-sm focus:outline-none focus:ring-3 focus:ring-sky-500/10 focus:border-sky-500 transition-all"
             value={form.password}
             onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-            placeholder={requirePassword ? '' : 'Leave blank to keep current'}
+            placeholder={requirePassword ? 'Create a strong password' : 'Leave blank to keep current'}
           />
           <button
             type="button"
@@ -205,7 +209,7 @@ export default function StaffPage() {
             {showPw ? 'Hide' : 'Show'}
           </button>
         </div>
-        {requirePassword && form.password.length > 0 && (() => {
+        {form.password.length > 0 && (() => {
           const checks = [
             { ok: form.password.length >= 8,          label: 'Min 8 characters' },
             { ok: /[0-9]/.test(form.password),         label: 'At least one digit' },
